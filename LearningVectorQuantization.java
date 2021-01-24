@@ -32,56 +32,35 @@ public class LearningVectorQuantization {
         do {
             indexOfEpoch++;
 
-            /*обчислюємо відстані до кластерів*/
-            distanseTo1st = pow(weightMatrix[0][0] - learningVector[currentVectorIndex][0] ,2) +
-                            pow(weightMatrix[1][0] - learningVector[currentVectorIndex][1] ,2) +
-                            pow(weightMatrix[2][0] - learningVector[currentVectorIndex][2] ,2) +
-                            pow(weightMatrix[3][0] - learningVector[currentVectorIndex][3] ,2);
-
-            distanseTo2nd = pow(weightMatrix[0][1] - learningVector[currentVectorIndex][0] ,2) +
-                            pow(weightMatrix[1][1] - learningVector[currentVectorIndex][1] ,2) +
-                            pow(weightMatrix[2][1] - learningVector[currentVectorIndex][2] ,2) +
-                            pow(weightMatrix[3][1] - learningVector[currentVectorIndex][3] ,2);
-
+            distanseTo1st = 0.0;
+            distanseTo2nd = 0.0;
+            for (int index = 0; index < 4; index++) {  // обчислюємо відстані до кластерів
+                distanseTo1st += pow(weightMatrix[index][0] - learningVector[currentVectorIndex][index], 2);
+                distanseTo2nd += pow(weightMatrix[index][1] - learningVector[currentVectorIndex][index], 2);
+            }
 
             /*визначення переможця та зміна векторів ваг*/
             if (distanseTo1st < distanseTo2nd) {
                 //якщо <переможець> - 1ший кластер (змінюємо ваги в 1ій колонці матриці ваг)
-
-                if(learningVector[currentVectorIndex][4] == claster1/*1.0*/) {
+                if (learningVector[currentVectorIndex][4] == claster1/*1.0*/)
                     //якщо переможець = кластеру поточного навчального вектора
-                    weightMatrix[0][0] = weightMatrix[0][0] + learningSpeed * (learningVector[currentVectorIndex][0] - weightMatrix[0][0]);
-                    weightMatrix[1][0] = weightMatrix[1][0] + learningSpeed * (learningVector[currentVectorIndex][1] - weightMatrix[1][0]);
-                    weightMatrix[2][0] = weightMatrix[2][0] + learningSpeed * (learningVector[currentVectorIndex][2] - weightMatrix[2][0]);
-                    weightMatrix[3][0] = weightMatrix[3][0] + learningSpeed * (learningVector[currentVectorIndex][3] - weightMatrix[3][0]);
-                } else {
+                    for (int index = 0; index < 4; index++)
+                        weightMatrix[index][0] = weightMatrix[index][0] + learningSpeed * (learningVector[currentVectorIndex][index] - weightMatrix[index][0]);
+                else
                     //якщо переможець != кластеру поточного навчального вектора
-                    weightMatrix[0][0] = weightMatrix[0][0] - learningSpeed * (learningVector[currentVectorIndex][0] - weightMatrix[0][0]);
-                    weightMatrix[1][0] = weightMatrix[1][0] - learningSpeed * (learningVector[currentVectorIndex][1] - weightMatrix[1][0]);
-                    weightMatrix[2][0] = weightMatrix[2][0] - learningSpeed * (learningVector[currentVectorIndex][2] - weightMatrix[2][0]);
-                    weightMatrix[3][0] = weightMatrix[3][0] - learningSpeed * (learningVector[currentVectorIndex][3] - weightMatrix[3][0]);
-                }
-
-            } else {
-                //якщо <переможець> - 2ий кластер
-
-                if(learningVector[currentVectorIndex][4] == claster2/*0.0*/) {
-                    //якщо переможець = кластеру поточного навчального вектора
-                    weightMatrix[0][1] = weightMatrix[0][1] + learningSpeed * (learningVector[currentVectorIndex][0] - weightMatrix[0][1]);
-                    weightMatrix[1][1] = weightMatrix[1][1] + learningSpeed * (learningVector[currentVectorIndex][1] - weightMatrix[1][1]);
-                    weightMatrix[2][1] = weightMatrix[2][1] + learningSpeed * (learningVector[currentVectorIndex][2] - weightMatrix[2][1]);
-                    weightMatrix[3][1] = weightMatrix[3][1] + learningSpeed * (learningVector[currentVectorIndex][3] - weightMatrix[3][1]);
-                } else {
-                    //якщо переможець != кластеру поточного навчального вектора
-                    weightMatrix[0][1] = weightMatrix[0][1] - learningSpeed * (learningVector[currentVectorIndex][0] - weightMatrix[0][1]);
-                    weightMatrix[1][1] = weightMatrix[1][1] - learningSpeed * (learningVector[currentVectorIndex][1] - weightMatrix[1][1]);
-                    weightMatrix[2][1] = weightMatrix[2][1] - learningSpeed * (learningVector[currentVectorIndex][2] - weightMatrix[2][1]);
-                    weightMatrix[3][1] = weightMatrix[3][1] - learningSpeed * (learningVector[currentVectorIndex][3] - weightMatrix[3][1]);
-                }
-            }
+                    for (int index = 0; index < 4; index++)
+                        weightMatrix[index][0] = weightMatrix[index][0] - learningSpeed * (learningVector[currentVectorIndex][index] - weightMatrix[index][0]);
+            } else if (learningVector[currentVectorIndex][4] == claster2/*0.0*/) { //якщо <переможець> - 2ий кластер
+                //якщо переможець = кластеру поточного навчального вектора
+                for (int index = 0; index < 4; index++)
+                    weightMatrix[index][1] = weightMatrix[index][1] + learningSpeed * (learningVector[currentVectorIndex][index] - weightMatrix[index][1]);
+            } else
+                //якщо переможець != кластеру поточного навчального вектора
+                for (int index = 0; index < 4; index++)
+                    weightMatrix[index][1] = weightMatrix[index][1] - learningSpeed * (learningVector[currentVectorIndex][index] - weightMatrix[index][1]);
 
             updateLearnSpeed();
-            changeCurrentVector(learningVector);// подаємо наступний навча
+            changeCurrentVector(learningVector); // подаємо наступний навчальний вектор
 
         } while (!maxNumberOfEpochsIsReached()); //умова завершення навчання
 
@@ -95,7 +74,7 @@ public class LearningVectorQuantization {
     }
 
     public void updateLearnSpeed() {
-        learningSpeed = 0.1 * (1 - (indexOfEpoch / numberOfEpochs ));
+        learningSpeed = 0.1 * (1 - (indexOfEpoch / numberOfEpochs));
     }
 
     //змінюємо вектор
@@ -104,23 +83,20 @@ public class LearningVectorQuantization {
         if (currentVectorIndex == learningVector.length - 1) { //якщо був останній
             currentVectorIndex = 0;
             do {
-                if (indexOf1stWeightArray == currentVectorIndex || indexOf2ndWeightArray == currentVectorIndex) {
+                if (indexOf1stWeightArray == currentVectorIndex || indexOf2ndWeightArray == currentVectorIndex)
                     currentVectorIndex++;
-                }
 
-            } while(!(currentVectorIndex != indexOf1stWeightArray && currentVectorIndex != indexOf2ndWeightArray));
+            } while (!(currentVectorIndex != indexOf1stWeightArray && currentVectorIndex != indexOf2ndWeightArray));
 
         } else { //якщо був НЕ останній
-            currentVectorIndex ++;
+            currentVectorIndex++;
             do {
                 //якщо <cтав> останній, але відноситься до матриці ваг
-                if (currentVectorIndex == learningVector.length - 1 && (indexOf1stWeightArray == currentVectorIndex ||
-                        indexOf2ndWeightArray == currentVectorIndex)) { //якщо <cтав> останній
+                if (currentVectorIndex == learningVector.length - 1 && (indexOf1stWeightArray == currentVectorIndex || indexOf2ndWeightArray == currentVectorIndex))  //якщо <cтав> останній
                     currentVectorIndex = 0; //повертаємося на початок
-                }
-                if (indexOf1stWeightArray == currentVectorIndex || indexOf2ndWeightArray == currentVectorIndex) {
+
+                if (indexOf1stWeightArray == currentVectorIndex || indexOf2ndWeightArray == currentVectorIndex)
                     currentVectorIndex++;
-                }
             } while (!(currentVectorIndex != indexOf1stWeightArray && currentVectorIndex != indexOf2ndWeightArray));
         }
     }
@@ -128,12 +104,11 @@ public class LearningVectorQuantization {
     public int setStartVectorIndex(double[][] learningVector) { //задаємо індекс початкового вектора (який бере безпосередню участь у навчанні)
         int indexToReturn = 0;
 
-        for(int index = 0; index <learningVector.length; index++) {
+        for (int index = 0; index < learningVector.length; index++)
             if (index != indexOf1stWeightArray && index != indexOf2ndWeightArray) {
                 indexToReturn = index;
                 break;
             }
-        }
 
         return indexToReturn;
     }
@@ -146,25 +121,22 @@ public class LearningVectorQuantization {
             if (learningVector[raw][4] == 0 && !learningVector1IsReady) {
                 indexOf1stWeightArray = raw;
 
-                weightMatrix[0][0] = learningVector[raw][0];
-                weightMatrix[1][0] = learningVector[raw][1];
-                weightMatrix[2][0] = learningVector[raw][2];
-                weightMatrix[3][0] = learningVector[raw][3];
+                for (int index = 0; index < 4; index++)
+                    weightMatrix[index][0] = learningVector[raw][index];
+
                 learningVector1IsReady = true;
             }
             if (learningVector[raw][4] == 1 && !learningVector2IsReady) {
                 indexOf2ndWeightArray = raw;
 
-                weightMatrix[0][1] = learningVector[raw][0];
-                weightMatrix[1][1] = learningVector[raw][1];
-                weightMatrix[2][1] = learningVector[raw][2];
-                weightMatrix[3][1] = learningVector[raw][3];
+                for (int index = 0; index < 4; index++)
+                    weightMatrix[index][1] = learningVector[raw][index];
+
                 learningVector2IsReady = true;
             }
 
-            if (learningVector1IsReady && learningVector2IsReady) {
+            if (learningVector1IsReady && learningVector2IsReady)
                 break;
-            }
         }
     }
 
@@ -178,24 +150,19 @@ public class LearningVectorQuantization {
     public void test(double[][] testVectors) { //метод тестування нейронної мережі
 
         for (int index = 0; index < testVectors.length; index++) {
-            distanseTo1st = pow(weightMatrix[0][0] - testVectors[index][0] ,2) +
-                    pow(weightMatrix[1][0] - testVectors[index][1] ,2) +
-                    pow(weightMatrix[2][0] - testVectors[index][2] ,2) +
-                    pow(weightMatrix[3][0] - testVectors[index][3] ,2);
+            distanseTo1st = 0;
+            distanseTo2nd = 0;
+            for (int index2 = 0; index2 < 4; index2++) {
+                distanseTo1st += pow(weightMatrix[index2][0] - testVectors[index][index2], 2);
+                distanseTo2nd += pow(weightMatrix[index2][1] - testVectors[index][index2], 2);
+            }
 
-            distanseTo2nd = pow(weightMatrix[0][1] - testVectors[index][0] ,2) +
-                    pow(weightMatrix[1][1] - testVectors[index][1] ,2) +
-                    pow(weightMatrix[2][1] - testVectors[index][2] ,2) +
-                    pow(weightMatrix[3][1] - testVectors[index][3] ,2);
-
-            System.out.println("вектор: " + testVectors[index][0] + " " + testVectors[index][1] +
-                               " " + testVectors[index][2] + " " + testVectors[index][3]);
+            System.out.println("вектор: " + testVectors[index][0] + " " + testVectors[index][1] + " " + testVectors[index][2] + " " + testVectors[index][3]);
 
             if (distanseTo1st < distanseTo2nd)
                 System.out.println("колектор");
             else
                 System.out.println("покришка");
         }
-
     }
 }

@@ -26,15 +26,13 @@ public class LearningVector {
         System.out.println("\t\t  НАВЧАЛЬНІ ВЕКТОРИ");
 
         for (int raw = 0; raw < learningVector.length; raw++) {
-
             if (raw + 1 <= 8)
-                System.out.print("K-" + (raw+1) + "     ");
+                System.out.print("K-" + (raw + 1) + "     ");
             else
-                System.out.print("П-" + (raw-7) + "     ");
+                System.out.print("П-" + (raw - 7) + "     ");
 
-            for (int col = 0; col < learningVector[raw].length; col++) {
+            for (int col = 0; col < learningVector[raw].length; col++)
                 System.out.print(String.format("%4.1f", learningVector[raw][col]) + " ");
-            }
             System.out.println();
         }
     }

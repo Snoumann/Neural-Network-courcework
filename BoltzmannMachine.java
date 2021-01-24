@@ -1,36 +1,30 @@
 package coursework;
 
 import java.util.concurrent.ThreadLocalRandom;
-
 import static java.lang.Math.*;
 
 public class BoltzmannMachine {
-
-    double[] entryNeurons = new double[4];
-    double[] hiddenLayerNeurons = new double[4];
-    double exit;
-
+    double[] entryNeurons = new double[4];       //масив вхідних нейронів
+    double[] hiddenLayerNeurons = new double[4]; //масив нейронів прихованого шару
+    double output;    //змінна, яка зберігає значення виходу нейромережі
     double T = 273.0; //штучна температура (крок 1)
-    double k = 0.001;
+    double k = 0.001; //константа
 
-    //вага[шар][від якого нейрона][до якого нейрона]                                   [1ий шар][4][4]   [2ий шар][4][1]
+    /*вага[шар][від якого нейрона][до якого нейрона]                                   [1ий шар][4][4]   [2ий шар][4][1]*/
     double[][][] wages = new double[2][4][4]; //масив для збереження значення ваг
 
     //ініціалізація ваг !!! (перед початком роботи машини Больцмана)
     public void initializeAllWages() {
-        for (int indexLayer = 0; indexLayer < wages.length; indexLayer++) {
-            for (int indexFromNeuron = 0; indexFromNeuron < wages[indexLayer].length; indexFromNeuron++) {
-                for (int indexToNeuron = 0; indexToNeuron < wages[indexLayer][indexFromNeuron].length; indexToNeuron++) {
-                    wages[indexLayer][indexFromNeuron][indexToNeuron] =
-                            ThreadLocalRandom.current().nextDouble(-1.0, 1.0);
-                }
-            }
-        }
+        for (int indexLayer = 0; indexLayer < wages.length; indexLayer++)
+            for (int indexFromNeuron = 0; indexFromNeuron < wages[indexLayer].length; indexFromNeuron++)
+                for (int indexToNeuron = 0; indexToNeuron < wages[indexLayer][indexFromNeuron].length; indexToNeuron++)
+                    wages[indexLayer][indexFromNeuron][indexToNeuron] = ThreadLocalRandom.current().nextDouble(-1.0, 1.0);
     }
 
-    int indexLayer = 0;       //<<з якою вагою спочатку будемо працювати>>
-    int indexFromNeuron = 0;
-    int indexToNeuron = 0;
+    //змінні, які відображають "координати ваги "з якою  будемо працювати
+    int indexLayer = 0;       //координата шару
+    int indexFromNeuron = 0;  //координати початкового нейрону
+    int indexToNeuron = 0;    //координата кінцевого нейрону
 
     double temporaryChanged; //зміна для зберігання старого значення ваги
 
@@ -41,7 +35,6 @@ public class BoltzmannMachine {
         long startTime = System.currentTimeMillis(); //зміна для підрахунку часу роботи машини Больцмана
 
         int vectorIndex = 0; // подаємо на вхід 1ший (0) вектор
-
         while (true) {
             for (int index = 0; index < 3; index++)                //ініціалізуємо вхідні нейрони
                 entryNeurons[index] = entries[vectorIndex][index];
@@ -49,7 +42,7 @@ public class BoltzmannMachine {
             iterationCount++; //рахуємо число ітерацій
 
             //кроки 1-5
-            calculateExit();     //обчислюємо виходи (крок 2)
+            calculateOutput();     //обчислюємо виходи (крок 2)
 
             double firstTargetFunction = calculateTargetFunction(); //обчислюємо "1-шу" ціл функцію (крок 2)
 
@@ -58,23 +51,20 @@ public class BoltzmannMachine {
 
             if (targetFunctionBecameBetter(firstTargetFunction, secondTargetFunction)) { //порівнюємо 1. і 2.(крок 4)
                 //ф-ція покращилася. зміна ваги відбулася. нічого не змінюємо(крок 4)
-            } else {
-                if (calculateChangeProbabilityOfTargetFunction() > chooseRandomNumberFrom0To1()) { //(крок 4/5)
+            } else if (calculateChangeProbabilityOfTargetFunction() > chooseRandomNumberFrom0To1()) { //(крок 4/5)
                     //зміна ваги відбулася за умови розподілу Больцмана. нічого не змінюємо (крок 5)
-                } else {
+                } else
                     UNDOWageValueChange(); //повертаємо значення ваги до попереднього значення (крок 5)
-                }
-            }
+
 
             nextWage(); //готуємо наст вагу
             decreaseT();//зменшуємо температуру Т
 
             if (enoughSmallValueOfTargetFunctionIsReached()) {
-                if(vectorIndex < 14) {
+                if (vectorIndex < 14)
                     vectorIndex++; // пред'являємо мережі наступний вхідний вектор
-                } else {
+                else
                     vectorIndex = 0;
-                }
             }
 
             /*                       перевірка чи цільова ф-ція є допутимою для всіх векторів                         */
@@ -83,12 +73,10 @@ public class BoltzmannMachine {
             boolean validForAllVectors = true; //змінна для фіксації допустимості
 
             for (vectorIndex = 0; vectorIndex < entries.length; vectorIndex++) {
-                entryNeurons[0] = entries[vectorIndex][0];
-                entryNeurons[1] = entries[vectorIndex][1];
-                entryNeurons[2] = entries[vectorIndex][2];
-                entryNeurons[3] = entries[vectorIndex][3];
+                for (int indexEntryNeuron = 0; indexEntryNeuron < entryNeurons.length; indexEntryNeuron++)
+                    entryNeurons[indexEntryNeuron] = entries[vectorIndex][indexEntryNeuron];
 
-                calculateExit();
+                calculateOutput();
 
                 if (!enoughSmallValueOfTargetFunctionIsReached()) {
                     validForAllVectors = false;
@@ -105,7 +93,6 @@ public class BoltzmannMachine {
 
                 System.out.println("Навчання машини Больцмана завершене за " + timeOfWorkInSeconds + " сек.");
                 System.out.println("кількість ітерацій: " + iterationCount);
-
                 break;
             }
         }
@@ -114,59 +101,39 @@ public class BoltzmannMachine {
     public void test(double[][] testingVector) {
 
         for (int raw = 0; raw < testingVector.length; raw++) {
-            entryNeurons[0] = testingVector[raw][0];
-            entryNeurons[1] = testingVector[raw][1];
-            entryNeurons[2] = testingVector[raw][2];
-            entryNeurons[3] = testingVector[raw][3];
+            for(int indexEntryNeuron = 0; indexEntryNeuron < entryNeurons.length; indexEntryNeuron++)
+                entryNeurons[indexEntryNeuron] = testingVector[raw][indexEntryNeuron];
+
             System.out.println(entryNeurons[0] + " " + entryNeurons[1] + " " + entryNeurons[2] + " " + entryNeurons[3]);
-            calculateExit();
-            CollectorOrPocrushka(exit);
+            calculateOutput();
+            CollectorOrPocrushka(output);
         }
     }
 
-    public void calculateExit() { //обчислюємо виходи
-        hiddenLayerNeurons[0] = entryNeurons[0] * wages[0][0][0] + /*накоп суми нейронів 1ого [0ого](прихованого)шару*/
-                                entryNeurons[1] * wages[0][1][0] +
-                                entryNeurons[2] * wages[0][2][0] +
-                                entryNeurons[3] * wages[0][3][0];
-        hiddenLayerNeurons[1] = entryNeurons[0] * wages[0][0][1] +
-                                entryNeurons[1] * wages[0][1][1] +
-                                entryNeurons[2] * wages[0][2][1] +
-                                entryNeurons[3] * wages[0][3][1];
-        hiddenLayerNeurons[2] = entryNeurons[0] * wages[0][0][2] +
-                                entryNeurons[1] * wages[0][1][2] +
-                                entryNeurons[2] * wages[0][2][2] +
-                                entryNeurons[3] * wages[0][3][2];
-        hiddenLayerNeurons[3] = entryNeurons[0] * wages[0][0][3] +
-                                entryNeurons[1] * wages[0][1][3] +
-                                entryNeurons[2] * wages[0][2][3] +
-                                entryNeurons[3] * wages[0][3][3];
+    public void calculateOutput() { //обчислюємо виходи
+        for (int indexHiddenLayerNeuron = 0; indexHiddenLayerNeuron < hiddenLayerNeurons.length; indexHiddenLayerNeuron++) /*накоп суми нейронів 1ого [0ого](прихованого)шару*/
+                for (int indexStartNeuron = 0; indexStartNeuron < entryNeurons.length; indexStartNeuron++)
+                    hiddenLayerNeurons[indexHiddenLayerNeuron] += entryNeurons[indexStartNeuron] * wages[0][indexStartNeuron][indexHiddenLayerNeuron];
 
-        /*проганяємо накопичену суму через активаційну функцію*/
-        hiddenLayerNeurons[0] = 1 / (1 + exp(- 1 * hiddenLayerNeurons[0]));
-        hiddenLayerNeurons[1] = 1 / (1 + exp(- 1 *hiddenLayerNeurons[1]));
-        hiddenLayerNeurons[2] = 1 / (1 + exp(- 1 * hiddenLayerNeurons[2]));
-        hiddenLayerNeurons[3] = 1 / (1 + exp(- 1 *hiddenLayerNeurons[3]));
+        for (int index = 0; index < hiddenLayerNeurons.length; index++) //проганяємо накопичену суму через активаційну функцію
+            hiddenLayerNeurons[index] = 1 / (1 + exp(-1 * hiddenLayerNeurons[index]));
 
-        exit = hiddenLayerNeurons[0] * wages[1][0][0] + /*накоп суми для вихідного нейрона*///(один вихідний нейрон)
-                   hiddenLayerNeurons[1] * wages[1][1][0] +
-                   hiddenLayerNeurons[2] * wages[1][2][0] +
-                   hiddenLayerNeurons[3] * wages[1][3][0];
+        for (int index = 0; index < hiddenLayerNeurons.length; index++) //накоп суми для вихідного нейрона*///(один вихідний нейрон)
+            output += hiddenLayerNeurons[index] * wages[1][index][0];
 
-        /*проганяємо накопичену суму через активаційну функцію*/
-        exit = 1 / (1 + exp(-1 * exit));
+        output = 1 / (1 + exp(-1 * output)); //проганяємо накопичену суму через активаційну функцію
     }
 
-    public void CollectorOrPocrushka(double exit) {
-        if (exit <= 0.4999999999999999999999)
+    public void CollectorOrPocrushka(double output) {
+        if (output <= 0.4999999999999999999999)
             System.out.println("покришка");
-        if (exit > 0.5 && exit <= 1.0)
+        if (output > 0.5 && output <= 1.0)
             System.out.println("колектор");
     }
 
     public double calculateTargetFunction() { //обчислюємо "середньоквадратичну" цільову функцію
-        calculateExit();
-        return pow( (exit - getDesiredResult()), 2);  //при одному вихідному нейроні
+        calculateOutput();
+        return pow( (output - getDesiredResult()), 2);  //при одному вихідному нейроні
     }
 
     public double getDesiredResult() { //бажаний результат
@@ -214,44 +181,35 @@ public class BoltzmannMachine {
 
     //перевірка чи досягнуто достатньо мале значення цільової функції (крок "6")
     public boolean enoughSmallValueOfTargetFunctionIsReached() {
-        if (calculateTargetFunction() <= 0.06249999999999) {
+        if (calculateTargetFunction() <= 0.06249)
             return true;
-        } else {
+        else
             return false;
-        }
     }
 
-    //метод, який обрирає наступну вагу, для можливого подальшого зміни значення
+    //метод, який обирає наступну вагу, для можливого подальшого зміни значення
     public void nextWage() {
-        if (indexLayer == 0) { //якщо попередня вага була в 1шому шарі
-            if (indexFromNeuron == 3) { //якщо попер вага йшла від останнього нейрону
+        if (indexLayer == 0)  //якщо попередня вага була в 1шому шарі
+            if (indexFromNeuron == 3)  //якщо попер вага йшла від останнього нейрону
                 if (indexToNeuron == 3) { //якщо попер вага йшла до останнього нейрону
                     indexFromNeuron = 0;
                     indexToNeuron = 0;
                     indexLayer++; //зміна шару
-                } else { //якщо попер вага йшла НЕ до останнього нейрону
+                } else  //якщо попер вага йшла НЕ до останнього нейрону
                     indexToNeuron++;
-                }
-            } else { //якщо попер вага йшла НЕ від останнього нейрону
-                if (indexToNeuron == 3) { //якщо попер вага йшла до останнього нейрону
-                    indexFromNeuron++;
-                    indexToNeuron = 0;
-                } else { //якщо попер вага йшла НЕ до останнього нейрону
-                    indexToNeuron++;
-                }
-            }
-        } else { //якщо попередня вага була в 2ому шарі
-            if (indexFromNeuron == 3) { //якщо попер вага йшла від останнього нейрону
+            else if (indexToNeuron == 3) { //якщо попер вага йшла до останнього нейрону
+                indexFromNeuron++;
+                indexToNeuron = 0;
+            } else  //якщо попер вага йшла НЕ до останнього нейрону
+                indexToNeuron++;
+        else { //якщо попередня вага була в 2ому шарі
+            if (indexFromNeuron == 3)  //якщо попер вага йшла від останнього нейрону
                 if (indexToNeuron == 0) { //якщо попер вага йшла до останнього нейрону  (вихідний нейрон один)
                     indexFromNeuron = 0;
                     indexToNeuron = 0;
                     indexLayer--; //зміна шару
-                }
-            } else { //якщо попер вага йшла НЕ від останнього нейрону
-                if (indexToNeuron == 0) { //якщо попер вага йшла до останнього нейрону  (вихідний нейрон один)
-                    indexFromNeuron++;
-                }
-            }
+                } else if (indexToNeuron == 0)  //якщо попер вага йшла до останнього нейрону  (вихідний нейрон один)
+                    indexFromNeuron++;          //якщо попер вага йшла НЕ від останнього нейрону
         }
     }
 }
